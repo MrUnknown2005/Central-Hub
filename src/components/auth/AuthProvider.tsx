@@ -45,7 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isAdmin: Boolean(user?.isAdmin), signIn, signUp, signOut }),
+    // isAdmin is derived from the role, the single source of truth. Members
+    // (the default) get false; only an explicit 'admin' role unlocks it.
+    () => ({ user, isAdmin: user?.role === 'admin', signIn, signUp, signOut }),
     [user, signIn, signUp, signOut],
   )
 

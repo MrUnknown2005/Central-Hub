@@ -1,5 +1,3 @@
-import { isAdminEmail } from '@/config/access'
-
 /**
  * Auth seam — Supabase-shaped, localStorage-backed.
  *
@@ -7,6 +5,13 @@ import { isAdminEmail } from '@/config/access'
  * that calls them won't change when we swap the backend. `getSession` is a
  * synchronous read used to initialize the provider and gate routes without a
  * loading flicker.
+ *
+ * PERMISSIONS: every account is a `member`. There is no email allowlist and no
+ * first-user bootstrap — being the first to sign up grants nothing. Admin is
+ * assigned out-of-band by setting a user's `role`: today that means editing the
+ * stored record; once on Supabase it becomes a `role` column on the users
+ * table that you flip with SQL. `role` maps 1:1 to that column, so nothing in
+ * the UI changes when the backend does.
  *
  * SECURITY CAVEAT: this is mock-grade. Passwords are hashed (SHA-256 + a random
  * per-user salt) so they aren't stored in plain text, but everything lives in
@@ -18,12 +23,15 @@ import { isAdminEmail } from '@/config/access'
 const USERS_KEY = 'central-hub-users'
 const SESSION_KEY = 'central-hub-session'
 
+/** The two permission groups. Admins add and manage projects; members browse. */
+export type UserRole = 'member' | 'admin'
+
 /** Public shape handed to the UI. Never includes the password hash. */
 export interface AuthUser {
   id: string
   email: string
   name?: string
-  isAdmin: boolean
+  role: UserRole
   createdAt: string
 }
 
@@ -31,8 +39,7 @@ interface StoredUser {
   id: string
   email: string
   name?: string
-  /** True when this was the first account created (bootstrap admin). */
-  isFirstUser: boolean
+  role: UserRole
   createdAt: string
   salt: string
   passwordHash: string
@@ -58,13 +65,14 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
 }
 
-/** Admin if this was the first account OR the email is on the allowlist. */
+/** Role comes straight from the stored record. Anything that isn't explicitly
+ *  `admin` (including legacy records from before roles existed) is a member. */
 function toAuthUser(user: StoredUser): AuthUser {
   return {
     id: user.id,
     email: user.email,
     name: user.name,
-    isAdmin: user.isFirstUser || isAdminEmail(user.email),
+    role: user.role === 'admin' ? 'admin' : 'member',
     createdAt: user.createdAt,
   }
 }
@@ -104,7 +112,8 @@ export async function signUp({
     id: crypto.randomUUID(),
     email: normalized,
     name: name?.trim() || undefined,
-    isFirstUser: users.length === 0,
+    // Everyone starts as a member; admin is granted later from the database.
+    role: 'member',
     createdAt: new Date().toISOString(),
     salt,
     passwordHash: await hashPassword(password, salt),
