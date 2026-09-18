@@ -3,16 +3,19 @@ import { Link } from 'react-router-dom'
 import { ProjectCard } from '@/components/projects/ProjectCard'
 import { getRecentProjects } from '@/data/services'
 
-/** Most-recently-updated projects, using the shared ProjectCard. */
+/** Most-recently-added projects, using the shared ProjectCard. Renders nothing
+ *  when the hub is empty — Quick Launch above carries the empty state. */
 export function RecentProjects() {
   const recent = getRecentProjects(6)
+
+  if (recent.length === 0) return null
 
   return (
     <section className="space-y-5">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Recently updated</h2>
-          <p className="text-sm text-muted-foreground">The latest work across the club.</p>
+          <h2 className="text-lg font-semibold tracking-tight">Recently added</h2>
+          <p className="text-sm text-muted-foreground">The latest tools across the club.</p>
         </div>
         <Link
           to="/projects"

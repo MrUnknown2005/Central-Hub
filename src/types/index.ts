@@ -13,17 +13,12 @@ export type ProjectCategory =
   | 'game'
   | 'tool'
 
-export type ProjectLinkType = 'github' | 'demo' | 'website' | 'docs'
+/** External destinations for a project. No repo links — repos are private. */
+export type ProjectLinkType = 'website' | 'demo' | 'docs'
 
 export interface ProjectLink {
   type: ProjectLinkType
   url: string
-}
-
-/** Gradient seed for a project's icon chip / cover. */
-export interface ProjectAccent {
-  from: string
-  to: string
 }
 
 export interface Project {
@@ -38,35 +33,10 @@ export interface Project {
   status: ProjectStatus
   tech: string[]
   links: ProjectLink[]
-  accent: ProjectAccent
+  /** Surfaced in Quick Launch on the dashboard. */
   featured: boolean
-  stars: number
-  contributorIds: string[]
   createdAt: string
   updatedAt: string
-}
-
-export interface MemberLinks {
-  github?: string
-  linkedin?: string
-  website?: string
-}
-
-export interface Member {
-  id: string
-  name: string
-  role: string
-  avatar?: string
-  bio?: string
-  links?: MemberLinks
-  projectIds: string[]
-}
-
-export interface HubStats {
-  totalProjects: number
-  liveProjects: number
-  totalMembers: number
-  totalStars: number
 }
 
 export const PROJECT_CATEGORIES: ProjectCategory[] = [

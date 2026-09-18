@@ -1,18 +1,22 @@
 import { NavLink } from 'react-router-dom'
 
+import { useAuth } from '@/components/auth/AuthProvider'
 import { cn } from '@/lib/utils'
-import { NAV_ITEMS } from './nav-items'
+import { getNavItems } from './nav-items'
 
 /** Fixed mobile bottom navigation (hidden from `md` up). Text labels with an
  *  ink underline marking the active route — no icons. */
 export function BottomNav() {
+  const { isAdmin } = useAuth()
+  const navItems = getNavItems(isAdmin)
+
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="mx-auto flex max-w-md items-stretch justify-around">
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

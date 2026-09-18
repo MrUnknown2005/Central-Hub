@@ -35,7 +35,6 @@ function Toggle({
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'recent', label: 'Recent' },
   { key: 'name', label: 'Name' },
-  { key: 'stars', label: 'Stars' },
 ]
 
 /** Category + status text toggles and a sort control. */

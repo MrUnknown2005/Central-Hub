@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 
 import type { Project, ProjectCategory, ProjectStatus } from '@/types'
 
-export type SortKey = 'recent' | 'name' | 'stars'
+export type SortKey = 'recent' | 'name'
 export type CategoryFilter = ProjectCategory | 'all'
 export type StatusFilter = ProjectStatus | 'all'
 
@@ -33,8 +33,6 @@ export function useProjectSearch(projects: Project[]) {
       switch (sort) {
         case 'name':
           return a.name.localeCompare(b.name)
-        case 'stars':
-          return b.stars - a.stars
         default:
           return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       }

@@ -1,13 +1,18 @@
 import { Link, NavLink } from 'react-router-dom'
 
+import { useAuth } from '@/components/auth/AuthProvider'
 import { HubMark } from '@/components/common/icons'
 import { cn } from '@/lib/utils'
-import { NAV_ITEMS } from './nav-items'
+import { AccountMenu } from './AccountMenu'
+import { getNavItems } from './nav-items'
 import { ThemeToggle } from './ThemeToggle'
 
-/** Desktop-first top bar: wordmark, nav links (hidden on mobile), theme toggle.
- *  Flat and solid, separated from the page by a single hairline rule. */
+/** Desktop-first top bar: wordmark, nav links (hidden on mobile), theme toggle
+ *  and account menu. Flat and solid, separated from the page by a hairline rule. */
 export function TopNav() {
+  const { isAdmin } = useAuth()
+  const navItems = getNavItems(isAdmin)
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:px-6">
@@ -17,7 +22,7 @@ export function TopNav() {
         </Link>
 
         <nav className="ml-8 hidden items-center gap-6 md:flex">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -41,8 +46,9 @@ export function TopNav() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center">
+        <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
+          <AccountMenu />
         </div>
       </div>
     </header>

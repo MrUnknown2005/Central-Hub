@@ -32,12 +32,6 @@ export function ProjectCard({
     </Link>
   )
 
-  const stars = (
-    <span className="tabular text-xs text-muted-foreground">
-      <span aria-hidden="true">★</span> {project.stars}
-    </span>
-  )
-
   const links = (
     <div className="relative z-10 flex items-center gap-1">
       {primaryLinks.map((link) => (
@@ -68,7 +62,6 @@ export function ProjectCard({
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 sm:flex-col sm:items-end sm:gap-3">
           <StatusBadge status={project.status} />
-          {stars}
           {links}
         </div>
       </article>
@@ -98,8 +91,7 @@ export function ProjectCard({
         ))}
       </div>
 
-      <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-        {stars}
+      <div className="mt-auto flex items-center justify-end gap-2 pt-1">
         {links}
       </div>
     </article>

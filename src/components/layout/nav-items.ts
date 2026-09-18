@@ -6,9 +6,13 @@ export interface NavItem {
 }
 
 /** Primary navigation, shared by the desktop TopNav and mobile BottomNav.
- *  Text-only — labels are short enough to stand without icons. */
-export const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Dashboard', end: true },
-  { to: '/projects', label: 'Projects' },
-  { to: '/members', label: 'Members' },
-]
+ *  Text-only — labels are short enough to stand without icons. Derived from auth:
+ *  admins get "Add project"; everyone browses. */
+export function getNavItems(isAdmin: boolean): NavItem[] {
+  const items: NavItem[] = [
+    { to: '/', label: 'Dashboard', end: true },
+    { to: '/projects', label: 'Projects' },
+  ]
+  if (isAdmin) items.push({ to: '/add-project', label: 'Add project' })
+  return items
+}

@@ -123,7 +123,7 @@
 }
 
 @layer utilities {
-  /* Tabular figures for aligned data (stars, counts, dates). */
+  /* Tabular figures for aligned data (counts, dates). */
   .tabular {
     font-variant-numeric: tabular-nums;
   }

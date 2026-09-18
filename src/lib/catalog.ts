@@ -28,8 +28,7 @@ export const STATUS_META: Record<
 
 /** External link type → label. Rendered as a text link with an outbound mark. */
 export const LINK_META: Record<ProjectLinkType, { label: string }> = {
-  github: { label: 'GitHub' },
+  website: { label: 'Open app' },
   demo: { label: 'Live demo' },
-  website: { label: 'Website' },
   docs: { label: 'Docs' },
 }
