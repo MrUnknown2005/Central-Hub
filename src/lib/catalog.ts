@@ -15,15 +15,26 @@ export const CATEGORY_META: Record<ProjectCategory, { label: string }> = {
 /** Status → label + a monochrome marker. The single accent colour appears in
  *  exactly one place across the whole app: the "live" dot. Every other status
  *  is encoded by the marker's shape (filled / hollow / grey), not by hue.
- *  `muted` dims the label text for retired work. */
+ *  `ringClassName` is the fill of the slow ping behind each dot — the same hue
+ *  as the marker, so the pulse never introduces a new colour. `muted` dims the
+ *  label text for retired work. */
 export const STATUS_META: Record<
   ProjectStatus,
-  { label: string; dotClassName: string; muted?: boolean }
+  { label: string; dotClassName: string; ringClassName: string; muted?: boolean }
 > = {
-  live: { label: 'Live', dotClassName: 'bg-live' },
-  beta: { label: 'Beta', dotClassName: 'bg-foreground' },
-  wip: { label: 'In progress', dotClassName: 'border border-foreground bg-transparent' },
-  archived: { label: 'Archived', dotClassName: 'bg-muted-foreground', muted: true },
+  live: { label: 'Live', dotClassName: 'bg-live', ringClassName: 'bg-live' },
+  beta: { label: 'Beta', dotClassName: 'bg-foreground', ringClassName: 'bg-foreground' },
+  wip: {
+    label: 'In progress',
+    dotClassName: 'border border-foreground bg-transparent',
+    ringClassName: 'bg-foreground',
+  },
+  archived: {
+    label: 'Archived',
+    dotClassName: 'bg-muted-foreground',
+    ringClassName: 'bg-muted-foreground',
+    muted: true,
+  },
 }
 
 /** External link type → label. Rendered as a text link with an outbound mark. */

@@ -18,7 +18,7 @@ function launchTarget(project: Project) {
 }
 
 const TILE_CLASS =
-  'group flex flex-col justify-between gap-6 rounded-lg border border-border bg-card p-5 transition-colors hover:border-foreground/30'
+  'group relative flex flex-col justify-between gap-6 rounded-lg border border-border bg-card p-5 outline-none transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-foreground/25 hover:shadow-[0_8px_24px_-12px_rgb(27_27_24_/_0.18)] focus-visible:ring-[3px] focus-visible:ring-ring/60 dark:hover:shadow-[0_14px_32px_-14px_rgb(0_0_0_/_0.7)]'
 
 /** Featured tools you can open in one tap — the live app if it has one, else its
  *  page. Falls back to the most recent projects when nothing is featured yet. */
@@ -59,7 +59,7 @@ export function QuickLaunch({ featured, recent }: { featured: Project[]; recent:
                   <ProjectThumb
                     name={project.name}
                     image={project.image}
-                    className="size-10 text-sm"
+                    className="size-11 rounded-lg bg-background p-1 transition-transform duration-200 ease-out group-hover:scale-[1.04]"
                   />
                   <StatusBadge status={project.status} />
                 </div>
@@ -67,7 +67,10 @@ export function QuickLaunch({ featured, recent }: { featured: Project[]; recent:
                   <p className="flex items-center gap-1 font-semibold leading-tight tracking-tight">
                     {project.name}
                     {target.external && (
-                      <span aria-hidden className="text-muted-foreground group-hover:text-foreground">
+                      <span
+                        aria-hidden
+                        className="text-muted-foreground transition-transform duration-200 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground"
+                      >
                         ↗
                       </span>
                     )}

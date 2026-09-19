@@ -79,13 +79,17 @@ export function ProjectCard({
   return (
     <article
       className={cn(
-        'group relative flex flex-col gap-4 rounded-lg border border-border bg-card p-5',
+        'group relative flex flex-col gap-4 rounded-lg border border-border bg-card p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-foreground/25 hover:shadow-[0_8px_24px_-12px_rgb(27_27_24_/_0.18)] focus-within:border-foreground/25 dark:hover:shadow-[0_14px_32px_-14px_rgb(0_0_0_/_0.7)]',
         className,
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <ProjectThumb name={project.name} image={project.image} className="size-10 shrink-0" />
+          <ProjectThumb
+            name={project.name}
+            image={project.image}
+            className="size-11 shrink-0 rounded-lg bg-background p-1 transition-transform duration-200 ease-out group-hover:scale-[1.04]"
+          />
           <div className="min-w-0">
             <h3 className="text-lg font-semibold leading-tight tracking-tight">{nameLink}</h3>
             <p className="mt-1 text-xs text-muted-foreground">{categoryLabel}</p>
