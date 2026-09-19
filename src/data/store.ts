@@ -66,6 +66,26 @@ function inputToRow(input: NewProjectInput) {
   }
 }
 
+/** In-bucket object path from a public URL we created, or null if not ours. */
+function ownedStoragePath(url: string | null): string | null {
+  if (!url) return null
+  const marker = `/object/public/${BUCKET}/`
+  const i = url.indexOf(marker)
+  return i === -1 ? null : url.slice(i + marker.length)
+}
+
+/**
+ * Best-effort delete of a previously-uploaded logo. Never throws: a failed
+ * cleanup shouldn't roll back a project write that already succeeded, and the
+ * row — not the bucket — is the source of truth for what the site shows.
+ */
+async function removeStoredImage(url: string | null): Promise<void> {
+  const path = ownedStoragePath(url)
+  if (!path) return
+  const { error } = await supabase.storage.from(BUCKET).remove([path])
+  if (error) console.warn('removeStoredImage failed:', error.message)
+}
+
 export async function listProjects(): Promise<Project[]> {
   const { data, error } = await supabase
     .from('projects')
@@ -102,6 +122,13 @@ export async function addProject(input: NewProjectInput): Promise<Project> {
 }
 
 export async function updateProject(id: string, input: NewProjectInput): Promise<Project> {
+  // Remember the current logo so we can clean it up if the image changed.
+  const { data: prev } = await supabase
+    .from('projects')
+    .select('image_url')
+    .eq('id', id)
+    .maybeSingle()
+
   const { data, error } = await supabase
     .from('projects')
     .update(inputToRow(input))
@@ -109,12 +136,23 @@ export async function updateProject(id: string, input: NewProjectInput): Promise
     .select('*')
     .single()
   if (error) throw new Error(error.message)
+
+  const previousImage = (prev as { image_url: string | null } | null)?.image_url ?? null
+  if (previousImage && previousImage !== input.image) {
+    await removeStoredImage(previousImage)
+  }
   return rowToProject(data as ProjectRow)
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  const { error } = await supabase.from('projects').delete().eq('id', id)
+  const { data, error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', id)
+    .select('image_url')
+    .maybeSingle()
   if (error) throw new Error(error.message)
+  await removeStoredImage((data as { image_url: string | null } | null)?.image_url ?? null)
 }
 
 /** Upload a PNG to the public bucket and return its public URL. */
