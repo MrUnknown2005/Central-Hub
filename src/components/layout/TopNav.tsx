@@ -2,15 +2,17 @@ import { Link, NavLink } from 'react-router-dom'
 
 import { useAuth } from '@/components/auth/AuthProvider'
 import { HubMark } from '@/components/common/icons'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { AccountMenu } from './AccountMenu'
 import { getNavItems } from './nav-items'
 import { ThemeToggle } from './ThemeToggle'
 
 /** Desktop-first top bar: wordmark, nav links (hidden on mobile), theme toggle
- *  and account menu. Flat and solid, separated from the page by a hairline rule. */
+ *  and — in the top-right — the admin account menu, or a single Login button when
+ *  signed out. Flat and solid, separated from the page by a hairline rule. */
 export function TopNav() {
-  const { isAdmin } = useAuth()
+  const { user, isAdmin, loading } = useAuth()
   const navItems = getNavItems(isAdmin)
 
   return (
@@ -48,7 +50,14 @@ export function TopNav() {
 
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
-          <AccountMenu />
+          {!loading &&
+            (user ? (
+              <AccountMenu />
+            ) : (
+              <Button asChild size="sm" variant="outline">
+                <Link to="/login">Login</Link>
+              </Button>
+            ))}
         </div>
       </div>
     </header>

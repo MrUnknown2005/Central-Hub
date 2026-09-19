@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { HubMark } from '@/components/common/icons'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
 
-/** Frame for the sign-in / sign-up pages: centered column, wordmark and a theme
+/** Frame for the admin sign-in page: centered column, wordmark and a theme
  *  toggle, no app navigation. The form is the only thing to do here. */
 export function AuthLayout({
   title,

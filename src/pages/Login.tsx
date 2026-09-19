@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { AuthError } from '@/data/auth'
 
 export function Login() {
-  const { user, signIn } = useAuth()
+  const { user, loading, signIn } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: Location })?.from?.pathname ?? '/'
@@ -19,6 +19,9 @@ export function Login() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  // Wait for the session to resolve so we don't flash the form to an admin who's
+  // already signed in.
+  if (loading) return null
   if (user) return <Navigate to="/" replace />
 
   async function onSubmit(event: FormEvent) {
@@ -36,18 +39,15 @@ export function Login() {
 
   return (
     <AuthLayout
-      title="Sign in"
-      subtitle="Open the club’s tools in one place."
+      title="Admin sign in"
+      subtitle="Sign in to add or edit the club’s tools."
       footer={
-        <>
-          New here?{' '}
-          <Link
-            to="/signup"
-            className="font-medium text-foreground underline decoration-foreground/25 underline-offset-4 hover:decoration-foreground"
-          >
-            Create an account
-          </Link>
-        </>
+        <Link
+          to="/"
+          className="font-medium text-foreground underline decoration-foreground/25 underline-offset-4 hover:decoration-foreground"
+        >
+          Back to the hub
+        </Link>
       }
     >
       <form onSubmit={onSubmit} className="space-y-5" noValidate>

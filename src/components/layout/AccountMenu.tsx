@@ -34,7 +34,7 @@ export function AccountMenu() {
 
   async function onSignOut() {
     await signOut()
-    navigate('/login', { replace: true })
+    navigate('/', { replace: true })
   }
 
   return (

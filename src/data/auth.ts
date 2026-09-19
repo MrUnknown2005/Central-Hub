@@ -1,32 +1,23 @@
 /**
- * Auth seam — Supabase-shaped, localStorage-backed.
+ * Auth seam — Supabase Auth.
  *
- * `signUp` / `signIn` / `signOut` are async to mirror Supabase Auth, so the UI
- * that calls them won't change when we swap the backend. `getSession` is a
- * synchronous read used to initialize the provider and gate routes without a
- * loading flicker.
+ * The site is public to browse; sign-in is for admins only and there is no
+ * public sign-up (accounts are created in the Supabase dashboard). So this seam
+ * exposes just `signIn` / `signOut`, plus `getCurrentUser` (async session read)
+ * and `onAuthChange` (subscription) used by the auth provider.
  *
- * PERMISSIONS: every account is a `member`. There is no email allowlist and no
- * first-user bootstrap — being the first to sign up grants nothing. Admin is
- * assigned out-of-band by setting a user's `role`: today that means editing the
- * stored record; once on Supabase it becomes a `role` column on the users
- * table that you flip with SQL. `role` maps 1:1 to that column, so nothing in
- * the UI changes when the backend does.
- *
- * SECURITY CAVEAT: this is mock-grade. Passwords are hashed (SHA-256 + a random
- * per-user salt) so they aren't stored in plain text, but everything lives in
- * localStorage on the visitor's own machine — it is NOT real authentication and
- * offers no protection against someone with access to the browser. Real security
- * arrives with the Supabase swap (`signInWithPassword`, RLS, http-only session).
+ * `role` is read from the `profiles` table. Errors are mapped to the same
+ * friendly strings the UI already showed, so the form copy is unchanged.
  */
 
-const USERS_KEY = 'central-hub-users'
-const SESSION_KEY = 'central-hub-session'
+import type { Session } from '@supabase/supabase-js'
 
-/** The two permission groups. Admins add and manage projects; members browse. */
+import { supabase } from '@/lib/supabase'
+
+/** The two permission groups. Admins manage projects; members can only browse. */
 export type UserRole = 'member' | 'admin'
 
-/** Public shape handed to the UI. Never includes the password hash. */
+/** Public shape handed to the UI. */
 export interface AuthUser {
   id: string
   email: string
@@ -35,93 +26,35 @@ export interface AuthUser {
   createdAt: string
 }
 
-interface StoredUser {
-  id: string
-  email: string
-  name?: string
-  role: UserRole
-  createdAt: string
-  salt: string
-  passwordHash: string
-}
-
 export class AuthError extends Error {}
 
-function readUsers(): StoredUser[] {
-  try {
-    const raw = localStorage.getItem(USERS_KEY)
-    const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? (parsed as StoredUser[]) : []
-  } catch {
-    return []
-  }
-}
+/** Build an AuthUser from a session, reading `role` from the profiles table. */
+async function resolveUser(session: Session | null): Promise<AuthUser | null> {
+  if (!session?.user) return null
 
-function writeUsers(users: StoredUser[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users))
-}
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, name, email')
+    .eq('id', session.user.id)
+    .maybeSingle()
 
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase()
-}
+  const metaName = session.user.user_metadata?.name as string | undefined
 
-/** Role comes straight from the stored record. Anything that isn't explicitly
- *  `admin` (including legacy records from before roles existed) is a member. */
-function toAuthUser(user: StoredUser): AuthUser {
   return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role === 'admin' ? 'admin' : 'member',
-    createdAt: user.createdAt,
+    id: session.user.id,
+    email: session.user.email ?? profile?.email ?? '',
+    name: profile?.name ?? metaName,
+    // Anything that isn't an explicit 'admin' is treated as a member.
+    role: profile?.role === 'admin' ? 'admin' : 'member',
+    createdAt: session.user.created_at,
   }
 }
 
-function randomHex(bytes = 16): string {
-  const arr = new Uint8Array(bytes)
-  crypto.getRandomValues(arr)
-  return Array.from(arr, (b) => b.toString(16).padStart(2, '0')).join('')
-}
-
-async function hashPassword(password: string, salt: string): Promise<string> {
-  const data = new TextEncoder().encode(`${salt}:${password}`)
-  const digest = await crypto.subtle.digest('SHA-256', data)
-  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('')
-}
-
-export async function signUp({
-  email,
-  password,
-  name,
-}: {
-  email: string
-  password: string
-  name?: string
-}): Promise<AuthUser> {
-  const normalized = normalizeEmail(email)
-  if (!normalized) throw new AuthError('Enter your email address.')
-  if (password.length < 8) throw new AuthError('Password must be at least 8 characters.')
-
-  const users = readUsers()
-  if (users.some((u) => u.email === normalized)) {
-    throw new AuthError('An account with this email already exists. Try signing in.')
-  }
-
-  const salt = randomHex()
-  const stored: StoredUser = {
-    id: crypto.randomUUID(),
-    email: normalized,
-    name: name?.trim() || undefined,
-    // Everyone starts as a member; admin is granted later from the database.
-    role: 'member',
-    createdAt: new Date().toISOString(),
-    salt,
-    passwordHash: await hashPassword(password, salt),
-  }
-
-  writeUsers([...users, stored])
-  localStorage.setItem(SESSION_KEY, stored.id)
-  return toAuthUser(stored)
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  return resolveUser(session)
 }
 
 export async function signIn({
@@ -131,24 +64,40 @@ export async function signIn({
   email: string
   password: string
 }): Promise<AuthUser> {
-  const normalized = normalizeEmail(email)
-  const user = readUsers().find((u) => u.email === normalized)
-  // Same message whether the email is unknown or the password is wrong.
-  const invalid = new AuthError('That email and password don’t match.')
-  if (!user) throw invalid
-  if ((await hashPassword(password, user.salt)) !== user.passwordHash) throw invalid
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password,
+  })
 
-  localStorage.setItem(SESSION_KEY, user.id)
-  return toAuthUser(user)
+  if (error) {
+    if (/confirm/i.test(error.message)) {
+      throw new AuthError('Confirm this account’s email in Supabase, then sign in.')
+    }
+    // Same message whether the email is unknown or the password is wrong.
+    throw new AuthError('That email and password don’t match.')
+  }
+
+  const user = await resolveUser(data.session)
+  if (!user) throw new AuthError('Could not sign in. Try again.')
+  return user
 }
 
 export async function signOut(): Promise<void> {
-  localStorage.removeItem(SESSION_KEY)
+  await supabase.auth.signOut()
 }
 
-export function getSession(): AuthUser | null {
-  const id = localStorage.getItem(SESSION_KEY)
-  if (!id) return null
-  const user = readUsers().find((u) => u.id === id)
-  return user ? toAuthUser(user) : null
+/**
+ * Subscribe to auth changes. The profile lookup is deferred out of the callback
+ * (Supabase warns against calling other client methods synchronously inside it,
+ * which can deadlock the auth lock). Returns an unsubscribe function.
+ */
+export function onAuthChange(cb: (user: AuthUser | null) => void): () => void {
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, session) => {
+    setTimeout(() => {
+      void resolveUser(session).then(cb)
+    }, 0)
+  })
+  return () => subscription.unsubscribe()
 }

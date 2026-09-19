@@ -3,9 +3,8 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { EmptyState } from '@/components/common/EmptyState'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { ProjectThumb } from '@/components/projects/ProjectThumb'
 import { Button } from '@/components/ui/button'
-import { getFeaturedProjects, getRecentProjects } from '@/data/services'
-import { CATEGORY_META } from '@/lib/catalog'
 import type { Project } from '@/types'
 
 /** Where a quick-launch tile takes you: the live app if there is one, else detail. */
@@ -23,10 +22,8 @@ const TILE_CLASS =
 
 /** Featured tools you can open in one tap — the live app if it has one, else its
  *  page. Falls back to the most recent projects when nothing is featured yet. */
-export function QuickLaunch() {
+export function QuickLaunch({ featured, recent }: { featured: Project[]; recent: Project[] }) {
   const { isAdmin } = useAuth()
-  const featured = getFeaturedProjects()
-  const recent = getRecentProjects(4)
   const tiles = (featured.length > 0 ? featured : recent).slice(0, 4)
 
   return (
@@ -55,13 +52,16 @@ export function QuickLaunch() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {tiles.map((project) => {
-            const { label } = CATEGORY_META[project.category]
             const target = launchTarget(project)
             const body = (
               <>
                 <div className="flex items-start justify-between gap-3">
+                  <ProjectThumb
+                    name={project.name}
+                    image={project.image}
+                    className="size-10 text-sm"
+                  />
                   <StatusBadge status={project.status} />
-                  <span className="text-xs text-muted-foreground">{label}</span>
                 </div>
                 <div className="space-y-1">
                   <p className="flex items-center gap-1 font-semibold leading-tight tracking-tight">

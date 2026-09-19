@@ -35,6 +35,8 @@ export interface Project {
   links: ProjectLink[]
   /** Surfaced in Quick Launch on the dashboard. */
   featured: boolean
+  /** Public URL of the project's PNG logo in Supabase Storage, or null. */
+  image: string | null
   createdAt: string
   updatedAt: string
 }

@@ -1,82 +1,128 @@
+import { supabase } from '@/lib/supabase'
 import type { Project } from '@/types'
-import { projects as seed } from './projects'
 
 /**
- * localStorage-backed project store. This is the mutable layer behind the
- * `data/services.ts` seam: reads and writes stay synchronous so components can
- * call them in render and re-read on navigation. Moving to Supabase later
- * replaces these bodies with a `projects` table (and reads become async).
+ * Project store, backed by the Supabase `projects` table and the
+ * `project-images` storage bucket. Every function is async. Reads are resilient
+ * (they log and return empty on error so the public site never crashes on a bad
+ * fetch); writes throw so the form can surface the failure. Row shape is mapped
+ * to/from the `Project` type here, so the rest of the app never sees snake_case.
  *
- * Caveat: localStorage is per-browser, so projects added on one device/profile
- * are not visible on another until the backend swap.
+ * Access is enforced by RLS in `supabase/schema.sql`: anyone may read, only
+ * admins may insert/update/delete. This layer just issues the queries.
  */
 
-const STORAGE_KEY = 'central-hub-projects'
-
-/** Fields collected from the Add Project form. Everything else is generated. */
+/** Fields collected from the project form. Everything else is generated. */
 export type NewProjectInput = Omit<Project, 'id' | 'slug' | 'createdAt' | 'updatedAt'>
 
-function read(): Project[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw === null) {
-      // First load: fall back to the seed (empty today) and persist it.
-      write(seed)
-      return [...seed]
-    }
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? (parsed as Project[]) : []
-  } catch {
+const BUCKET = 'project-images'
+
+interface ProjectRow {
+  id: string
+  slug: string
+  name: string
+  tagline: string
+  description: string | null
+  category: Project['category']
+  status: Project['status']
+  tech: string[] | null
+  links: Project['links'] | null
+  featured: boolean
+  image_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+function rowToProject(row: ProjectRow): Project {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    tagline: row.tagline,
+    description: row.description ?? '',
+    category: row.category,
+    status: row.status,
+    tech: row.tech ?? [],
+    links: row.links ?? [],
+    featured: row.featured,
+    image: row.image_url,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+/** Map the UI input to the table's columns (camelCase → snake_case for image). */
+function inputToRow(input: NewProjectInput) {
+  return {
+    name: input.name,
+    tagline: input.tagline,
+    description: input.description,
+    category: input.category,
+    status: input.status,
+    tech: input.tech,
+    links: input.links,
+    featured: input.featured,
+    image_url: input.image,
+  }
+}
+
+export async function listProjects(): Promise<Project[]> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .order('updated_at', { ascending: false })
+  if (error) {
+    console.error('listProjects failed:', error.message)
     return []
   }
+  return (data as ProjectRow[]).map(rowToProject)
 }
 
-function write(list: Project[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
-  } catch {
-    // Storage full or unavailable — nothing we can do here; reads will fall back.
+export async function getProjectBySlug(slug: string): Promise<Project | null> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle()
+  if (error) {
+    console.error('getProjectBySlug failed:', error.message)
+    return null
   }
+  return data ? rowToProject(data as ProjectRow) : null
 }
 
-export function listProjects(): Project[] {
-  return read()
+export async function addProject(input: NewProjectInput): Promise<Project> {
+  const { data, error } = await supabase
+    .from('projects')
+    .insert(inputToRow(input))
+    .select('*')
+    .single()
+  if (error) throw new Error(error.message)
+  return rowToProject(data as ProjectRow)
 }
 
-export function getProjectBySlug(slug: string): Project | undefined {
-  return read().find((p) => p.slug === slug)
+export async function updateProject(id: string, input: NewProjectInput): Promise<Project> {
+  const { data, error } = await supabase
+    .from('projects')
+    .update(inputToRow(input))
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw new Error(error.message)
+  return rowToProject(data as ProjectRow)
 }
 
-/** Lowercase kebab slug, de-duped against existing projects (`name`, `name-2`, …). */
-function makeSlug(name: string, existing: Project[]): string {
-  const base =
-    name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'project'
-
-  const taken = new Set(existing.map((p) => p.slug))
-  if (!taken.has(base)) return base
-
-  let n = 2
-  while (taken.has(`${base}-${n}`)) n += 1
-  return `${base}-${n}`
+export async function deleteProject(id: string): Promise<void> {
+  const { error } = await supabase.from('projects').delete().eq('id', id)
+  if (error) throw new Error(error.message)
 }
 
-export function addProject(input: NewProjectInput): Project {
-  const list = read()
-  const now = new Date().toISOString()
-  const project: Project = {
-    ...input,
-    id:
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `p_${Date.now()}`,
-    slug: makeSlug(input.name, list),
-    createdAt: now,
-    updatedAt: now,
-  }
-  write([project, ...list])
-  return project
+/** Upload a PNG to the public bucket and return its public URL. */
+export async function uploadProjectImage(file: File): Promise<string> {
+  const path = `${crypto.randomUUID()}.png`
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, file, { contentType: 'image/png', upsert: false })
+  if (error) throw new Error(error.message)
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
 }

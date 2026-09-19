@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ExternalLinkButton } from '@/components/common/ExternalLinkButton'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { TechBadge } from '@/components/common/TechBadge'
+import { ProjectThumb } from '@/components/projects/ProjectThumb'
 import { CATEGORY_META } from '@/lib/catalog'
 import { cn } from '@/lib/utils'
 import type { Project } from '@/types'
@@ -48,15 +49,22 @@ export function ProjectCard({
           className,
         )}
       >
-        <div className="min-w-0 sm:flex-1">
-          <h3 className="text-lg font-semibold tracking-tight">{nameLink}</h3>
-          <p className="mt-1 text-sm text-muted-foreground">{project.tagline}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-            <span className="text-xs text-muted-foreground">{categoryLabel}</span>
-            <div className="flex flex-wrap gap-1.5">
-              {project.tech.map((tech) => (
-                <TechBadge key={tech} tech={tech} />
-              ))}
+        <div className="flex min-w-0 items-start gap-4 sm:flex-1">
+          <ProjectThumb
+            name={project.name}
+            image={project.image}
+            className="size-11 shrink-0"
+          />
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold tracking-tight">{nameLink}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{project.tagline}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              <span className="text-xs text-muted-foreground">{categoryLabel}</span>
+              <div className="flex flex-wrap gap-1.5">
+                {project.tech.map((tech) => (
+                  <TechBadge key={tech} tech={tech} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -76,9 +84,12 @@ export function ProjectCard({
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-lg font-semibold leading-tight tracking-tight">{nameLink}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">{categoryLabel}</p>
+        <div className="flex min-w-0 items-start gap-3">
+          <ProjectThumb name={project.name} image={project.image} className="size-10 shrink-0" />
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold leading-tight tracking-tight">{nameLink}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{categoryLabel}</p>
+          </div>
         </div>
         <StatusBadge status={project.status} className="shrink-0 pt-1" />
       </div>

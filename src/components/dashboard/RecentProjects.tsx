@@ -1,14 +1,12 @@
 import { Link } from 'react-router-dom'
 
 import { ProjectCard } from '@/components/projects/ProjectCard'
-import { getRecentProjects } from '@/data/services'
+import type { Project } from '@/types'
 
 /** Most-recently-added projects, using the shared ProjectCard. Renders nothing
  *  when the hub is empty — Quick Launch above carries the empty state. */
-export function RecentProjects() {
-  const recent = getRecentProjects(6)
-
-  if (recent.length === 0) return null
+export function RecentProjects({ projects }: { projects: Project[] }) {
+  if (projects.length === 0) return null
 
   return (
     <section className="space-y-5">
@@ -26,7 +24,7 @@ export function RecentProjects() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {recent.map((project) => (
+        {projects.map((project) => (
           <ProjectCard key={project.id} project={project} />
         ))}
       </div>

@@ -1,28 +1,65 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
 
 import {
-  getSession,
+  getCurrentUser,
+  onAuthChange,
   signIn as authSignIn,
   signOut as authSignOut,
-  signUp as authSignUp,
   type AuthUser,
 } from '@/data/auth'
 
-/** Auth context. Mirrors the ThemeProvider pattern: state lives here, the seam
- *  (`data/auth.ts`) does the work, so the Supabase swap never touches the UI. */
+/** Auth context. State lives here; the seam (`data/auth.ts`) talks to Supabase.
+ *  `loading` is true until the initial session read resolves, so route guards
+ *  can wait instead of flashing a signed-in admin away before their role loads. */
 interface AuthContextValue {
   user: AuthUser | null
   isAdmin: boolean
+  loading: boolean
   signIn: (email: string, password: string) => Promise<AuthUser>
-  signUp: (input: { email: string; password: string; name?: string }) => Promise<AuthUser>
   signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Synchronous init means routes can gate on the first render — no flash.
-  const [user, setUser] = useState<AuthUser | null>(getSession)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+
+    getCurrentUser()
+      .then((u) => {
+        if (active) {
+          setUser(u)
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (active) setLoading(false)
+      })
+
+    // Keep in sync with sign-in / sign-out / token refresh across tabs.
+    const unsubscribe = onAuthChange((u) => {
+      if (active) {
+        setUser(u)
+        setLoading(false)
+      }
+    })
+
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {
     const next = await authSignIn({ email, password })
@@ -30,25 +67,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return next
   }, [])
 
-  const signUp = useCallback(
-    async (input: { email: string; password: string; name?: string }) => {
-      const next = await authSignUp(input)
-      setUser(next)
-      return next
-    },
-    [],
-  )
-
   const signOut = useCallback(async () => {
     await authSignOut()
     setUser(null)
   }, [])
 
   const value = useMemo<AuthContextValue>(
-    // isAdmin is derived from the role, the single source of truth. Members
-    // (the default) get false; only an explicit 'admin' role unlocks it.
-    () => ({ user, isAdmin: user?.role === 'admin', signIn, signUp, signOut }),
-    [user, signIn, signUp, signOut],
+    // isAdmin is derived from the role, the single source of truth.
+    () => ({ user, isAdmin: user?.role === 'admin', loading, signIn, signOut }),
+    [user, loading, signIn, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

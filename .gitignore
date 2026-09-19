@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Local env with secrets (VITE_SUPABASE_*). .env.local is already covered by *.local.
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

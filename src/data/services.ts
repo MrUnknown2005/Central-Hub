@@ -1,34 +1,42 @@
 import type { Project } from '@/types'
-import { addProject as storeAddProject, getProjectBySlug, listProjects } from './store'
+import {
+  addProject as storeAddProject,
+  deleteProject as storeDeleteProject,
+  getProjectBySlug,
+  listProjects,
+  updateProject as storeUpdateProject,
+  uploadProjectImage as storeUploadProjectImage,
+} from './store'
 import type { NewProjectInput } from './store'
 
 /**
- * Single data-access seam for the whole app. Every page/component reads through
- * these functions and never imports the store directly. When we move to
- * Supabase, only these bodies change (sync → async queries) — the UI stays put.
+ * Single data-access seam for the whole app. Pages read through these functions
+ * (or through route loaders that call them) and never import the store directly.
+ * All calls are async now that the backend is Supabase.
  */
 
-export function getProjects(): Project[] {
+export function getProjects(): Promise<Project[]> {
   return listProjects()
 }
 
-export function getProject(slug: string): Project | undefined {
+export function getProject(slug: string): Promise<Project | null> {
   return getProjectBySlug(slug)
 }
 
-export function getFeaturedProjects(): Project[] {
-  return listProjects().filter((p) => p.featured)
-}
-
-/** Most-recently-updated first. */
-export function getRecentProjects(limit = 6): Project[] {
-  return [...listProjects()]
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, limit)
-}
-
-export function addProject(input: NewProjectInput): Project {
+export function addProject(input: NewProjectInput): Promise<Project> {
   return storeAddProject(input)
+}
+
+export function updateProject(id: string, input: NewProjectInput): Promise<Project> {
+  return storeUpdateProject(id, input)
+}
+
+export function deleteProject(id: string): Promise<void> {
+  return storeDeleteProject(id)
+}
+
+export function uploadProjectImage(file: File): Promise<string> {
+  return storeUploadProjectImage(file)
 }
 
 export type { NewProjectInput }

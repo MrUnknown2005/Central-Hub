@@ -1,14 +1,16 @@
+import { useLoaderData } from 'react-router-dom'
+
 import { EmptyState } from '@/components/common/EmptyState'
 import { PageHeader } from '@/components/common/PageHeader'
 import { SearchBar } from '@/components/common/SearchBar'
 import { ProjectFilters } from '@/components/projects/ProjectFilters'
 import { ProjectGrid } from '@/components/projects/ProjectGrid'
 import { Button } from '@/components/ui/button'
-import { getProjects } from '@/data/services'
 import { useProjectSearch } from '@/hooks/useProjectSearch'
+import type { Project } from '@/types'
 
 export function Projects() {
-  const allProjects = getProjects()
+  const allProjects = useLoaderData() as Project[]
   const {
     query,
     setQuery,

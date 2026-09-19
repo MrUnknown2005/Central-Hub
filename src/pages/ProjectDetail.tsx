@@ -1,14 +1,18 @@
-import { Link, useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useLoaderData, useNavigate } from 'react-router-dom'
 
+import { useAuth } from '@/components/auth/AuthProvider'
 import { EmptyState } from '@/components/common/EmptyState'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { TechBadge } from '@/components/common/TechBadge'
 import { ProjectLinks } from '@/components/projects/ProjectLinks'
+import { ProjectThumb } from '@/components/projects/ProjectThumb'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { getProject } from '@/data/services'
+import { deleteProject } from '@/data/services'
 import { CATEGORY_META } from '@/lib/catalog'
+import type { Project } from '@/types'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -22,8 +26,13 @@ const backLinkClass =
   'w-fit text-sm text-muted-foreground underline decoration-transparent underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground'
 
 export function ProjectDetail() {
-  const { slug } = useParams()
-  const project = slug ? getProject(slug) : undefined
+  const project = useLoaderData() as Project | null
+  const { isAdmin } = useAuth()
+  const navigate = useNavigate()
+
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   if (!project) {
     return (
@@ -46,6 +55,19 @@ export function ProjectDetail() {
 
   const { label: categoryLabel } = CATEGORY_META[project.category]
 
+  async function onDelete() {
+    if (!project) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteProject(project.id)
+      navigate('/projects', { replace: true })
+    } catch {
+      setDeleteError('Could not delete this project. Try again.')
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
       <Link to="/projects" className={backLinkClass}>
@@ -54,9 +76,16 @@ export function ProjectDetail() {
 
       {/* Header */}
       <div className="space-y-4">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{project.name}</h1>
-          <p className="max-w-2xl text-lg text-muted-foreground text-pretty">{project.tagline}</p>
+        <div className="flex items-start gap-4">
+          <ProjectThumb
+            name={project.name}
+            image={project.image}
+            className="size-14 shrink-0 text-xl sm:size-16"
+          />
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{project.name}</h1>
+            <p className="max-w-2xl text-lg text-muted-foreground text-pretty">{project.tagline}</p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           <StatusBadge status={project.status} />
@@ -102,6 +131,46 @@ export function ProjectDetail() {
               <span className="tabular">{formatDate(project.createdAt)}</span>
             </div>
           </Card>
+
+          {isAdmin && (
+            <Card className="gap-3 p-5">
+              <span className="text-sm font-medium">Manage</span>
+              <Button asChild variant="outline" size="sm">
+                <Link to={`/edit-project/${project.slug}`}>Edit project</Link>
+              </Button>
+
+              {confirmingDelete ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Delete this project? This can’t be undone.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="destructive" size="sm" onClick={onDelete} disabled={deleting}>
+                      {deleting ? 'Deleting…' : 'Delete'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setConfirmingDelete(false)}
+                      disabled={deleting}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                  {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  Delete project
+                </Button>
+              )}
+            </Card>
+          )}
         </aside>
       </div>
     </div>
