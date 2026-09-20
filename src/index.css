@@ -141,13 +141,13 @@
   .animate-status-ping {
     animation: status-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
-  /* Quick-launch tiles: a single colour streak travels around an otherwise
-     neutral hairline — not the whole edge lit at once. Most of the ring stays
-     var(--border); one short arc carries Google's blue→green→yellow→red, and the
-     registered --border-angle sweeps that arc around the perimeter for ever. Two
+  /* Quick-launch tiles: two small colour streaks circle an otherwise neutral
+     hairline, 180° apart — not the whole edge lit. The ring stays var(--border)
+     except for two short conic arcs, each packing Google's blue→green→yellow→red;
+     the rotating --border-angle sweeps both around the perimeter for ever. Two
      stacked backgrounds clip the card fill to the padding box and this conic to
      the border box, so colour shows only through the transparent 2px edge. The
-     streak parks in place under reduced motion. */
+     streaks park in place under reduced motion. */
   .animated-gradient-border {
     border: 2px solid transparent;
     background:
@@ -155,11 +155,18 @@
       conic-gradient(
         from var(--border-angle),
         var(--border) 0deg,
-        var(--border) 250deg,
-        #4285f4 285deg,
-        #34a853 308deg,
-        #fbbc05 330deg,
-        #ea4335 350deg,
+        var(--border) 72deg,
+        #4285f4 82deg,
+        #34a853 92deg,
+        #fbbc05 102deg,
+        #ea4335 112deg,
+        var(--border) 122deg,
+        var(--border) 252deg,
+        #4285f4 262deg,
+        #34a853 272deg,
+        #fbbc05 282deg,
+        #ea4335 292deg,
+        var(--border) 302deg,
         var(--border) 360deg
       )
       border-box;
