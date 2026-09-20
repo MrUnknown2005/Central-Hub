@@ -141,26 +141,29 @@
   .animate-status-ping {
     animation: status-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
-  /* Quick-launch tiles wear a slowly rotating multi-colour ring — the one place
-     colour is allowed to move. Two stacked backgrounds: the card fill clipped to
-     the padding box sits on top, a conic gradient clipped to the border box shows
-     through the transparent 2px border. Animating the registered --border-angle
-     spins that conic for ever. Hues are Google's red/green/blue/yellow, matching
-     the Gemini prompt-box reference. Frozen to a static ring under reduced motion. */
+  /* Quick-launch tiles: a single colour streak travels around an otherwise
+     neutral hairline — not the whole edge lit at once. Most of the ring stays
+     var(--border); one short arc carries Google's blue→green→yellow→red, and the
+     registered --border-angle sweeps that arc around the perimeter for ever. Two
+     stacked backgrounds clip the card fill to the padding box and this conic to
+     the border box, so colour shows only through the transparent 2px edge. The
+     streak parks in place under reduced motion. */
   .animated-gradient-border {
     border: 2px solid transparent;
     background:
       linear-gradient(var(--card), var(--card)) padding-box,
       conic-gradient(
         from var(--border-angle),
-        #4285f4,
-        #ea4335,
-        #fbbc05,
-        #34a853,
-        #4285f4
+        var(--border) 0deg,
+        var(--border) 250deg,
+        #4285f4 285deg,
+        #34a853 308deg,
+        #fbbc05 330deg,
+        #ea4335 350deg,
+        var(--border) 360deg
       )
       border-box;
-    animation: border-spin 5s linear infinite;
+    animation: border-spin 4s linear infinite;
   }
 }
 
