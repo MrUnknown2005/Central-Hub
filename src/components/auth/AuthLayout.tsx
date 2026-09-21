@@ -21,7 +21,7 @@ export function AuthLayout({
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
         <div className="flex items-center gap-2">
           <HubMark className="size-5" />
-          <span className="text-[15px] font-semibold tracking-tight">Central Hub</span>
+          <span className="text-[15px] font-semibold tracking-tight">MLC Central Hub</span>
         </div>
         <ThemeToggle />
       </header>

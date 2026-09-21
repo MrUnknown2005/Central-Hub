@@ -20,7 +20,7 @@ export function TopNav() {
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-2">
           <HubMark className="size-5" />
-          <span className="text-[15px] font-semibold tracking-tight">Central Hub</span>
+          <span className="text-[15px] font-semibold tracking-tight">MLC Central Hub</span>
         </Link>
 
         <nav className="ml-8 hidden items-center gap-6 md:flex">
