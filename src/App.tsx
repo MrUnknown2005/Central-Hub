@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, type LoaderFunctionArgs } from 'react-router-dom'
+import { createHashRouter, RouterProvider, type LoaderFunctionArgs } from 'react-router-dom'
 
 import { AuthProvider } from '@/components/auth/AuthProvider'
 import { RequireAdmin } from '@/components/auth/RequireAdmin'
@@ -31,8 +31,14 @@ async function projectLoader({ params }: LoaderFunctionArgs) {
 
 /** A pathless root route so the whole app has one HydrateFallback: on first load
  *  React Router blocks on the matched route's loader, and this is what it shows
- *  meanwhile (instead of a blank flash + the "No HydrateFallback" warning). */
-const router = createBrowserRouter([
+ *  meanwhile (instead of a blank flash + the "No HydrateFallback" warning).
+ *
+ *  Hash routing (paths after `#`) is deliberate: the app is served as static files
+ *  with no server-side rewrite, so a plain /projects deep-link or refresh would ask
+ *  the host for a file that isn't there and 404. With the hash, the host only ever
+ *  serves `/` and the router takes over — no per-host rewrite rule needed, and it
+ *  works the same when bundled into the mobile app. */
+const router = createHashRouter([
   {
     HydrateFallback: RouteLoading,
     children: [
