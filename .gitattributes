@@ -1,0 +1,10 @@
+# The Gradle wrapper runs on the Linux CI runner. Force LF on the shell script so a
+# CRLF shebang can never break it (`bad interpreter: /bin/sh^M`), keep the Windows
+# batch wrapper CRLF, and mark the wrapper jar binary so line-ending normalization
+# can never corrupt it. Windows contributors otherwise risk all three.
+gradlew        text eol=lf
+*.sh           text eol=lf
+gradlew.bat    text eol=crlf
+*.jar          binary
+*.keystore     binary
+*.jks          binary

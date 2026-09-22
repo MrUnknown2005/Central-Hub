@@ -28,3 +28,8 @@ dist-ssr
 
 # Claude Code session infra (preview config + local permissions)
 .claude/
+
+# Android signing keys — NEVER commit these. They live in GitHub Secrets (base64)
+# and on your machine only. A leaked keystore lets anyone ship updates as this app.
+*.jks
+*.keystore
