@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider, type LoaderFunctionArgs } from 're
 
 import { AuthProvider } from '@/components/auth/AuthProvider'
 import { RequireAdmin } from '@/components/auth/RequireAdmin'
+import { RouteLoading } from '@/components/common/RouteLoading'
 import { AppShell } from '@/components/layout/AppShell'
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import { getProject, getProjects } from '@/data/services'
@@ -28,32 +29,40 @@ async function projectLoader({ params }: LoaderFunctionArgs) {
   return getProject(params.slug ?? '')
 }
 
+/** A pathless root route so the whole app has one HydrateFallback: on first load
+ *  React Router blocks on the matched route's loader, and this is what it shows
+ *  meanwhile (instead of a blank flash + the "No HydrateFallback" warning). */
 const router = createBrowserRouter([
-  { path: '/login', element: <Login /> },
   {
-    element: <AppShell />,
+    HydrateFallback: RouteLoading,
     children: [
-      { index: true, loader: dashboardLoader, element: <Dashboard /> },
-      { path: 'projects', loader: projectsLoader, element: <Projects /> },
-      { path: 'projects/:slug', loader: projectLoader, element: <ProjectDetail /> },
+      { path: '/login', element: <Login /> },
       {
-        path: 'add-project',
-        element: (
-          <RequireAdmin>
-            <AddProject />
-          </RequireAdmin>
-        ),
+        element: <AppShell />,
+        children: [
+          { index: true, loader: dashboardLoader, element: <Dashboard /> },
+          { path: 'projects', loader: projectsLoader, element: <Projects /> },
+          { path: 'projects/:slug', loader: projectLoader, element: <ProjectDetail /> },
+          {
+            path: 'add-project',
+            element: (
+              <RequireAdmin>
+                <AddProject />
+              </RequireAdmin>
+            ),
+          },
+          {
+            path: 'edit-project/:slug',
+            loader: projectLoader,
+            element: (
+              <RequireAdmin>
+                <EditProject />
+              </RequireAdmin>
+            ),
+          },
+          { path: '*', element: <NotFound /> },
+        ],
       },
-      {
-        path: 'edit-project/:slug',
-        loader: projectLoader,
-        element: (
-          <RequireAdmin>
-            <EditProject />
-          </RequireAdmin>
-        ),
-      },
-      { path: '*', element: <NotFound /> },
     ],
   },
 ])

@@ -1,0 +1,21 @@
+# Render deploy config for MLC Central Hub (a Vite SPA static site).
+#
+# The `rewrite` route is the important part: this is a single-page app, so every
+# path is handled by React Router in the browser. Without this rule, hard-loading
+# or refreshing a deep link like /projects makes Render look for a file at that
+# path, fail, and serve its own "Not Found". Rewriting /* to /index.html serves
+# the app for every path and lets the router take over.
+#
+# Note: this file only drives configuration for a Blueprint-managed service. A
+# static site created by hand in the dashboard is NOT reconfigured by committing
+# this — add the same rule there under Settings > Redirects/Rewrites.
+services:
+  - type: web
+    runtime: static
+    name: uumlccentralhub
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
