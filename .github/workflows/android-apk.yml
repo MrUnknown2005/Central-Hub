@@ -47,6 +47,12 @@ jobs:
         run: npm ci
 
       - name: Build web app
+        env:
+          # Baked into the bundle at build time. Without these the Supabase client
+          # throws on load and the APK opens to a blank white page (Render sets them
+          # in its dashboard, which is why the website works but the APK didn't).
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Sync web build into the Android project
